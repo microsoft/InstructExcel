@@ -1,14 +1,7 @@
-import openai
-import math
 import json
-import pprint
 import os
 import pandas as pd
-import time
 import tqdm
-import random
-import csv
-from scipy.stats import ttest_ind
 
 with open("../instruct_excel_benchmark.json") as f:
     full_bench_no_data = json.load(f)
