@@ -26,7 +26,7 @@ for idx, ex in enumerate(tqdm.tqdm(full_bench_no_data)):
         # Get the data from the file_url
         try:
             if file_url != "missing":
-                os.system("curl %s --output temp.xlsx" % file_url)
+                os.system("curl --connect-timeout 10 -m 20 %s --output temp.xlsx" % file_url)
 
                 xl = pd.ExcelFile('temp.xlsx')
 
