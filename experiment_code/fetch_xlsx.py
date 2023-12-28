@@ -2,11 +2,32 @@ import json
 import os
 import pandas as pd
 import tqdm
+import hashlib
 
 with open("../instruct_excel_benchmark.json") as f:
     full_bench_no_data = json.load(f)
 
+if not os.path.exists("xlsx"):
+    os.mkdir("xlsx")
+
 #  Fill the 'data_string' field in the benchmark data
+for idx, ex in enumerate(tqdm.tqdm(full_bench_no_data)):
+    if 'data_string' not in ex:
+        file_url = ex['metadata']['filename']
+        fname = file_url.split("/")[-1]
+        print(fname, file_url)
+        file_hash = hashlib.md5(file_url.encode("utf-8")).hexdigest()
+        # Get the data from the file_url
+        try:
+            if file_url != "missing":
+                if not os.path.exists(f"xlsx/{file_hash}.xlsx"):
+                    print(f"downloading {file_hash}")
+                    os.system("curl --connect-timeout 10 -m 20 %s --output ./xlsx/%s.xlsx" % (file_url, file_hash))
+            else:
+                ex['data_string'] = "<DATA NOT AVAILABLE>"
+        except:
+            ex['data_string'] = "<DATA NOT AVAILABLE>"
+
 for idx, ex in enumerate(tqdm.tqdm(full_bench_no_data)):
     if idx % 100 == 0:
         with open("full_bench_with_data.json", 'w') as f:
@@ -14,14 +35,12 @@ for idx, ex in enumerate(tqdm.tqdm(full_bench_no_data)):
     if 'data_string' not in ex:
         file_url = ex['metadata']['filename']
         fname = file_url.split("/")[-1]
-        print(fname, file_url)
-
+        file_hash = hashlib.md5(file_url.encode("utf-8")).hexdigest()
         # Get the data from the file_url
         try:
             if file_url != "missing":
-                os.system("curl --connect-timeout 10 -m 20 %s --output temp.xlsx" % file_url)
 
-                xl = pd.ExcelFile('temp.xlsx')
+                xl = pd.ExcelFile(f"./xlsx/{file_hash}.xlsx", "openpyxl")
 
                 datastr = ""
                 for sheetname in xl.sheet_names:
@@ -34,6 +53,9 @@ for idx, ex in enumerate(tqdm.tqdm(full_bench_no_data)):
                 ex['data_string'] = "<DATA NOT AVAILABLE>"
         except:
             ex['data_string'] = "<DATA NOT AVAILABLE>"
+
+with open("full_bench_with_data.json", 'w') as f:
+    json.dump(full_bench_no_data, f)
 
 with open("full_bench_with_data.json", 'rb') as f:
     full_bench = json.load(f)
