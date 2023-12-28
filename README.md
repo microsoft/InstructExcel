@@ -10,11 +10,11 @@ The benchmark is included in `instruct_excel_benchmark.json`. Please see the pap
 
 ## Instructions for reproducing experiments
 
-Code for reproducing experiments is listed in the `experiment_code` folder. This code is set up to run from inside the `experiments_code` directory.
+Code for reproducing experiments is listed in the `experiment_code` folder. This code is set up to run from inside the `experiment_code` directory.
 
 First install libraries in the `requirements.txt` file.
 
-Before doing any experiments, you should also open the InjectDataToBenchmark python notebook and run it to save out train, dev, and test splits of the benchmark with data included from the Excel files downloaded from the web. 
+Before doing any experiments, you should also run fetch_xlsx.py to save out train, dev, and test splits of the benchmark with data included from the Excel files downloaded from the web. 
 
 ### Zero-shot and Few-shot Experiments
 
