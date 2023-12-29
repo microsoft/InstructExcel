@@ -5,28 +5,29 @@ import tqdm
 import hashlib
 
 with open("../instruct_excel_benchmark.json") as f:
-    full_bench_no_data = json.load(f)
+    full_bench_no_data = json.load(f)[:20]
 
 if not os.path.exists("xlsx"):
     os.mkdir("xlsx")
+needed_urls = set()
 
-#  Fill the 'data_string' field in the benchmark data
 for idx, ex in enumerate(tqdm.tqdm(full_bench_no_data)):
     if 'data_string' not in ex:
         file_url = ex['metadata']['filename']
         fname = file_url.split("/")[-1]
         print(fname, file_url)
-        file_hash = hashlib.md5(file_url.encode("utf-8")).hexdigest()
-        # Get the data from the file_url
-        try:
-            if file_url != "missing":
-                if not os.path.exists(f"xlsx/{file_hash}.xlsx"):
-                    print(f"downloading {file_hash}")
-                    os.system("curl --connect-timeout 10 -m 20 %s --output ./xlsx/%s.xlsx" % (file_url, file_hash))
-            else:
-                ex['data_string'] = "<DATA NOT AVAILABLE>"
-        except:
+        if file_url != "missing":
+            needed_urls.add(file_url)
+        else:
             ex['data_string'] = "<DATA NOT AVAILABLE>"
+
+for idx, ex in enumerate(tqdm.tqdm(needed_urls)):
+    file_hash = hashlib.md5(ex.encode("utf-8")).hexdigest()
+    try:
+        print(f"downloading {ex}")
+        os.system("curl --connect-timeout 10 -m 20 %s --output ./xlsx/%s.xlsx" % (ex, file_hash))
+    except:
+        pass
 
 for idx, ex in enumerate(tqdm.tqdm(full_bench_no_data)):
     if idx % 100 == 0:
@@ -36,7 +37,7 @@ for idx, ex in enumerate(tqdm.tqdm(full_bench_no_data)):
         file_url = ex['metadata']['filename']
         fname = file_url.split("/")[-1]
         file_hash = hashlib.md5(file_url.encode("utf-8")).hexdigest()
-        # Get the data from the file_url
+
         try:
             if file_url != "missing":
 
