@@ -5,7 +5,7 @@ import tqdm
 import hashlib
 
 with open("../instruct_excel_benchmark.json") as f:
-    full_bench_no_data = json.load(f)[:20]
+    full_bench_no_data = json.load(f)
 
 if not os.path.exists("xlsx"):
     os.mkdir("xlsx")
