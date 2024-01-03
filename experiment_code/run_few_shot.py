@@ -33,7 +33,7 @@ def get_model_context_limits(name):
         'babbage': 2049,
         'ada': 2049
     }
-    return limits[name]
+    return limits[name] - 256
 
 
 def get_inputs(setting, api_in_prompt):
@@ -194,6 +194,7 @@ def parse_args():
     parser.add_argument("--setting", type=str)
     parser.add_argument("--seed", type=int, default=31415)
     parser.add_argument("--openai_key", type=str)
+    parser.add_argument("--base_url", default="https://api.openai.com/v1", type=str)
     parser.add_argument('--api_in_prompt', dest='api_in_prompt', default=False, action='store_true')
     parser.add_argument('--dynamic_prompt', dest='dynamic_prompt', default=False, action='store_true')
     return parser.parse_args()
@@ -208,7 +209,7 @@ if __name__ == "__main__":
     tokenizer_name = args.tokenizer_name
     setting = args.setting
     seed = args.seed
-    openai.api_key = args.openai_key
+    client = openai.OpenAI(api_key=args.openai_key, base_url=args.base_url, )
     api_in_prompt = args.api_in_prompt
     dynamic_prompt = args.dynamic_prompt
 
@@ -266,7 +267,7 @@ if __name__ == "__main__":
     excelfilelist = []
     exceldesclist = []
 
-    num_eval = 200
+    num_eval = 60
 
     for i in range(num_eval):
         if i % 10 == 0:
@@ -307,13 +308,13 @@ if __name__ == "__main__":
         prompt_final += '\nExcel Script Function:\n' + code_header
         promptlist.append(prompt_final)
 
-        excelfilelist.append(datali[i]['metadata']['public_url'])
+        excelfilelist.append(datali[i]['metadata']['filename'])
         exceldesclist.append(datali[i]['metadata']['filedescription'])
         goldlist.append(str(datali[i]['output']))
 
         if model_name != "dummy":
-            response = openai.Completion.create(model=model_name, prompt=prompt_final, temperature=0,
-                                                top_p=1, frequency_penalty=0, presence_penalty=0, max_tokens=256)
+            response = client.chat.completions.create(model=model_name, messages=[{"role":"user","content":prompt_final}], temperature=0,
+                                                top_p=1, frequency_penalty=0, presence_penalty=0, max_tokens=256,)
         else:
             response = {"choices": [{"text": "Set range D254 on selectedSheet selectedSheet.getRange(\"D254\").setFormulaLocal(\"=xor(C253)\"); }"}]}
         responselist.append(response)
@@ -321,7 +322,7 @@ if __name__ == "__main__":
     for i in range(len(responselist)):
         output_list.append({
             "output": code_header +
-                      responselist[i]['choices'][0]['text'],
+                    responselist[i].choices[0].message.content,
             "input": promptlist[i],
             "goldoutput": goldlist[i], "excelfilelink": excelfilelist[i],
             "excelfiledesc": exceldesclist[i]})
@@ -338,7 +339,7 @@ if __name__ == "__main__":
     print("Predictions written to", pred_filename)
     print("Running evaluations")
     metrics = {}
-    max_eval = 200
+    max_eval = 60
     for i in range(max_eval):
         gold_outputs = []
         gold_outputs_minus_params = []
